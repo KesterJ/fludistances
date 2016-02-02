@@ -5,22 +5,18 @@ from Bio import SeqIO
 from Bio import AlignIO
 from io import StringIO
 import copy
-import matplotlib.pyplot as plt
 import csv
 
 
-#CONSTANTS
-HAFILE = 'Human H3N2 data 2010-2015/HA-cds-data.fasta'
-NAFILE = 'Human H3N2 data 2010-2015/NA-cds-data.fasta'
 
 #Align them
-def align_genes(in_file):
+def align_genes(in_file, format):
 	"""
 	Takes a file name (in_file) and extracts the sequences in that file into a Biopython Align object.
 	"""
 	mafft_cline = Applications.MafftCommandline('/usr/local/bin/mafft',input=in_file)
 	stdout, stderr = mafft_cline()
-	align = AlignIO.read(StringIO(stdout), "fasta")
+	align = AlignIO.read(StringIO(stdout), format)
 	return align
 
 
@@ -81,12 +77,12 @@ def get_distances(seqlist):
 	return distdict
 
 
-def file_to_distances(in_file):
+def file_to_distances(in_file, format):
 	"""
 	This should just be a wrapper for all the other functions, that calls them in order.
 	"""
 	print('Reading files...')
-	alignlist = align_genes(in_file)
+	alignlist = align_genes(in_file, format)
 	#Something here to check they look like coding seqs - just check start with ATG?
 	print('Extracting third positions')
 	thirdposlist = get_third_pos(alignlist)
@@ -99,21 +95,6 @@ def file_to_distances(in_file):
 	return distdict
 
 
-def prep_for_plot(dict1, dict2):
-	"""
-	Takes two dictionaries with the same key list, and turns them into two lists ordered in the same
-	way. The point is to make two lists where the points are correctly paired for matplotlib's scatter
-	function.
-	"""
-	#Add sth to deal with differing keys
-	list1 = []
-	list2 = []
-	for key in dict1:
-		if key in dict2:
-			list1.append(dict1[key])
-			list2.append(dict2[key])
-	return (list1, list2)
-
 
 def dict_to_csv(dict1, filename):
 	"""
@@ -125,19 +106,34 @@ def dict_to_csv(dict1, filename):
 		writer.writerow(dict1)
 
 
-def main():
-	file1 = HAFILE
-	file2 = NAFILE
-	dict1 = file_to_distances(file1)
-	dict2 = file_to_distances(file2)
-	dict_to_csv(dict1, 'HA-dict.csv')
-	dict_to_csv(dict2, 'NA-dict.csv')
-	print('Reformatting dictionaries...')
-	plotlists = prep_for_plot(dict1, dict2)
-	print('Plotting...')
-	plt.scatter(plotlists[0], plotlists[1], marker='+')
-	plt.show()
-	
+
+def parse_clargs (clargs):
+	import argparse
+	aparser = argparse.ArgumentParser()
+
+	aparser.add_argument ("infile",
+		help='File containing full gene sequences')
+
+	aparser.add_argument("outfile",
+		help='Name of the file you want to output to')
+
+	aparser.add_argument("-f", "--format",
+		help='Format of the input sequence file',
+		type=str,
+		default='fasta'
+	)
+
+	args = aparser.parse_args()
+
+	return args
+
+
+
+def main(clargs):
+	args = parse_clargs(clargs)
+	dict1 = file_to_distances(args.infile, args.format)
+	dict_to_csv(dict1, args.outfile)
+
 
 if __name__ == '__main__':
 	try:
