@@ -1,4 +1,7 @@
 
+
+#IMPORTS
+
 import Bio
 from Bio.Align import Applications
 from Bio import SeqIO
@@ -6,11 +9,16 @@ from Bio import AlignIO
 from io import StringIO
 import copy
 import csv
+import sys
 
 
+#CONSTS
+DNA = 'ACTGactg-'
 
-#Align them
-def align_genes(in_file, format):
+
+#CODE
+
+def align_file(in_file, format):
 	"""
 	Takes a file name (in_file) and extracts the sequences in that file into a Biopython Align object.
 	"""
@@ -18,6 +26,7 @@ def align_genes(in_file, format):
 	stdout, stderr = mafft_cline()
 	align = AlignIO.read(StringIO(stdout), format)
 	return align
+
 
 
 def get_third_pos(alignlist):
@@ -34,6 +43,17 @@ def get_third_pos(alignlist):
 		tempseq.seq = thirdpos
 		thirdlist.append(tempseq)
 	return thirdlist
+
+
+def check_ACTG(seqlist):
+	onlyACTGlist = []
+	for seq in seqlist:
+		if all(i in DNA for i in seq):
+			onlyACTGlist.append(seq)
+		else:
+			print(seq)
+	return onlyACTGlist
+
 
 #Prob don't need this unless want to calculate e.g. some stats on which positions are most variable
 def get_differing_pos(seqlist):
@@ -54,7 +74,8 @@ def get_differing_pos(seqlist):
 
 
 def hamming_distance(s1, s2):
-    """Return the Hamming distance between equal-length sequences"""
+    """Return the Hamming distance (the number of positions at which they differ) between equal-length
+    strings or sequence objects"""
     if len(s1) != len(s2):
         raise ValueError("Undefined for sequences of unequal length")
     return sum(bool(ord(ch1) - ord(ch2)) for ch1, ch2 in zip(s1, s2))
@@ -71,7 +92,7 @@ def get_distances(seqlist):
 		for j in range(i+1, len(seqlist)):
 			#As the isolate name is stored within the description of a SeqRecord along with a lot of other data,
 			#the next line is to extract specifically that part.
-			#Split this off into a function to make code more understandable?
+			#???: Split this off into a function to make code more understandable?
 			key = seqlist[i].description.split('|')[1] + seqlist[j].description.split('|')[1]
 			distdict[key] = hamming_distance(seqlist[i].seq, seqlist[j].seq)
 	return distdict
@@ -82,16 +103,15 @@ def file_to_distances(in_file, format):
 	This should just be a wrapper for all the other functions, that calls them in order.
 	"""
 	print('Reading files...')
-	alignlist = align_genes(in_file, format)
-	#Something here to check they look like coding seqs - just check start with ATG?
+	alignlist = align_file(in_file, format)
+	#TODO: KJ - Add something here to check they look like coding seqs - just check start with ATG?
 	print('Extracting third positions')
 	thirdposlist = get_third_pos(alignlist)
-	#The line below (calling get_differing_pos) isn't strictly necessary -
-	#could just compare whole sequence, which may be more appropriate. But effect should just scale
-	#graph differently - not affect final result.
-	#diffposlist = get_differing_pos(thirdposlist)
+	print('Length thirdposlist = %s' %len(thirdposlist))
+	cleanlist = check_ACTG(thirdposlist)
+	print('Length cleanlist = %s' %len(cleanlist))
 	print('Finding Hamming distances...')
-	distdict = get_distances(thirdposlist)
+	distdict = get_distances(cleanlist)
 	return distdict
 
 
