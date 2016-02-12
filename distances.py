@@ -52,19 +52,19 @@ def check_coding(seqlist):
 	this criterion.
 	"""
 	codinglist = []
+	notcodinglist = []
 	for seq in seqlist:
 		x = 0
-		#While loop to et x and make sure we start from the first nucleotide if there are gaps
+		#While loop to set x and make sure we start from the first nucleotide if there are gaps
 		#at the start of the alignment
 		while seq[x] == '-' and x <= len(seq)-3:
 			x += 1
-		print(seq.seq[x+0:x+3])
 		if seq[x+0] in ('a', 'A') and seq[x+1] in ('t', 'T') and seq[x+2] in ('g', 'G'):
 			codinglist.append(seq)
-			print('True')
 		else:
-			print('False')
-
+			notcodinglist.append(seq)
+	if notcodinglist:
+		seqlist_to_file(notcodinglist, 'notcoding%s'%args.outfile)
 	return codinglist
 
 
@@ -77,11 +77,13 @@ def check_ACTG(seqlist):
 	this criterion.
 	"""
 	onlyACTGlist = []
+	notACTGlist = []
 	for seq in seqlist:
 		if all(i in DNA for i in seq):
 			onlyACTGlist.append(seq)
 		else:
-			print(seq)
+			notACTGlist.append(seq)
+	seqlist_to_file(notACTGlist, 'notACTG%s'%args.outfile)
 	return onlyACTGlist
 
 
@@ -102,16 +104,17 @@ def count_differing_pos(seqlist):
 			diffpos.append(str(nucl)+templist)
 	return templist
 
-#TODO: KJ - make this more sophisticated, so it recognises gaps on the start and end of sequences
-#and only compares the middle part. (Currently leads to v large distances where large numbers of '-')
+
 def hamming_distance(s1, s2):
     """Return the Hamming distance (the number of positions at which they differ) between equal-length
     strings or sequence objects. For simplicity, sites which have a gap in either sequence are currently
     ignored and do not contribute to the distance."""
     if len(s1) != len(s2):
         raise ValueError("Undefined for sequences of unequal length")
-    return sum(bool(ord(ch1) - ord(ch2)) for ch1, ch2 in zip(s1, s2) if ch1 != '-' and ch2 != '-')
-
+    if args.ignoregaps:
+    	return sum(bool(ord(ch1) - ord(ch2)) for ch1, ch2 in zip(s1, s2) if ch1 != '-' and ch2 != '-')
+    else:
+    	return sum(bool(ord(ch1) - ord(ch2)) for ch1, ch2 in zip(s1, s2))
 
 #Older data structure since replaced with data frame - code retained for now
 def get_distancedict(seqlist):
@@ -153,9 +156,13 @@ def drop_multi_indices(df):
 	NB: This should ideally check if sequences are equal for duplicates - if they are, keep one; if not, drop both (as it's hard
 	to know why they're different and so they're unreliable). 
 	"""
+	#TODO: KJ - add sth to keep one of each pair duplicates if their seqs are identical.
 	duplicates = set([x for x in df.index.tolist() if df.index.tolist().count(x) > 1])
 	df = df.drop(duplicates)
 	df = df.drop(duplicates, 1)
+	#Outputs the list of dropped isolates - in case useful.
+	if duplicates:
+		list_to_file(duplicates, 'duplicates-%s'%args.outfile)
 	return df
 
 
@@ -172,6 +179,26 @@ def prep_frame(df):
 	df.columns = df.index
 	df = drop_multi_indices(df)
 	return df
+
+
+def list_to_file(outlist, savepath):
+	"""
+	Writes a list to a file, one item per line.
+	"""
+	with open(savepath, 'w') as out_hndl:
+		for item in outlist:
+  			out_hndl.write('%s\n' % item)
+
+
+def seqlist_to_file(seqlist, savepath):
+	"""
+	Writes a list of sequences to a file from sequence object, one item per line.
+	"""
+	with open(savepath, 'w') as out_hndl:
+  		for item in seqlist:
+  			out_hndl.write('%s\n' %item.description)	
+  			out_hndl.write('%s\n' %str(item.seq))
+
 
 def file_to_distances(in_file, format):
 	"""
@@ -225,8 +252,12 @@ def parse_clargs (clargs):
 	aparser.add_argument("-f", "--format",
 		help='Format of the input sequence file',
 		type=str,
-		default='fasta'
-	)
+		default='fasta')
+
+	aparser.add_argument("-i", "--ignoregaps",
+		help='Should gap nucleotides be ignored when calculating Hamming distance',
+		type=bool,
+		default=True)
 
 	args = aparser.parse_args()
 
@@ -235,6 +266,7 @@ def parse_clargs (clargs):
 
 
 def main(clargs):
+	global args
 	args = parse_clargs(clargs)
 	frame1 = file_to_distances(args.infile, args.format)
 	prepframe1 = prep_frame(frame1)

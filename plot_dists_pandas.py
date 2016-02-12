@@ -47,9 +47,6 @@ def get_subframe(frame1, indexlist):
 	"""
 	import time
 	newframe = pd.DataFrame(index = indexlist, columns = indexlist)
-	print('In Frame 1',set([x for x in frame1.index.tolist() if frame1.index.tolist().count(x) > 1]))
-	print('In indexlist',set([x for x in indexlist if indexlist.count(x) > 1]))
-	time.sleep(15)
 	newframe.update(frame1)
 	return newframe
 
@@ -67,29 +64,6 @@ def plot_frames(frame1, frame2, color):
 	plt.scatter(f1, f2, marker='.', color=color)
 
 
-def drop_multi_indices(df):
-	"""
-	Drops all indices which are repeated after removing the GenBank ID (assume this is due to two
-	separate groups sequencing the same isolate). This isn't an ideal solution, but it'll do for now.
-	"""
-	duplicates = set([x for x in df.index.tolist() if df.index.tolist().count(x) > 1])
-	df = df.drop(duplicates)
-	df = df.drop(duplicates, 1)
-	return df
-
-
-def prep_frame(df):
-	"""
-	Cuts out anything after the ID and description from keys of data frame index and columns. This
-	makes it much easier to match indices for frames containing info about different proteins later.
-	"""
-	newindex = []
-	for i in df.index:
-		newindex.append(i.split('|')[1])
-	df.index = newindex
-	df.columns = df.index
-	df = drop_multi_indices(df)
-	return df
 
 def parse_clargs (clargs):
 	import argparse
@@ -118,9 +92,6 @@ def main(clargs):
 	args = parse_clargs(clargs)
 	frame1 = pd.read_csv(args.infile1, index_col = 0)
 	frame2 = pd.read_csv(args.infile2, index_col = 0)
-	frame1 = prep_frame(frame1)
-	frame2 = prep_frame(frame2)
-	"""
 	if args.filterword:
 		#Only need to find subframes for one of our two, as the plot_frames function already finds the
 		#overlap betwen the two frames being plotted - this overlap will naturally include the subframe
@@ -133,9 +104,8 @@ def main(clargs):
 		plot_frames(subframe1, frame2, 'r')
 		plt.savefig(args.outfile, format = 'png')
 	else:	
-	"""
-	plot_frames(frame1, frame2, 'b')
-	plt.savefig(args.outfile, format = 'png')
+		plot_frames(frame1, frame2, 'b')
+		plt.savefig(args.outfile, format = 'png')
 
 
 if __name__ == '__main__':
