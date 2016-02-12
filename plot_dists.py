@@ -118,7 +118,7 @@ def plot_dicts(dict1, dict2, color):
 	#sublist2 = get_subset(list2, randsamples)
 	print('Plotting...')
 	plt.scatter(list1, list2, marker='.', color=color)
-	savepath = 'HA-NA-rm187626.png'
+	savepath = 'HA-noncodingrm-NA-noncodingrm-fluB.png'
 	plt.savefig(savepath)
 	#plt.show()
 	#Add sth here to save plot to outfile if one if provided in command line
