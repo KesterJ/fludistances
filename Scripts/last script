@@ -1,0 +1,14 @@
+
+FASTAS = ['BM2-CDS-all-FluB.fasta', 'M1-CDS-all-FluB.fasta', 'HA-CDS-all-FluB.fasta', 'NA-CDS-all-FluB.fasta',
+			'NP-CDS-all-FluB.fasta', 'NS1-CDS-all-FluB.fasta', 'NS2-CDS-all-FluB.fasta', 'PA-CDS-all-FluB.fasta',
+			'PB1-CDS-all-FluB.fasta', 'PB2-CDS-all-FluB.fasta']
+#Need to split BM2, M1 and NS1, NS2.
+
+rule all:
+	input: FASTAS
+
+
+
+rule get_distances:
+	input:
+		
