@@ -88,19 +88,19 @@ def check_ACTG(seqlist):
 
 
 
-def hamming_distance(s1, s2):
+def hamming_distance(s1, s2, ignoregaps):
     """Return the Hamming distance (the number of positions at which they differ) between equal-length
     strings or sequence objects. For simplicity, sites which have a gap in either sequence are currently
     ignored and do not contribute to the distance."""
     if len(s1) != len(s2):
         raise ValueError("Undefined for sequences of unequal length")
-    if args.ignoregaps == True:
+    if ignoregaps == True:
     	return sum(bool(ord(ch1) - ord(ch2)) for ch1, ch2 in zip(s1, s2) if ch1 != '-' and ch2 != '-')
     else:
     	return sum(bool(ord(ch1) - ord(ch2)) for ch1, ch2 in zip(s1, s2))
 
 
-def get_distancedict(seqlist):
+def get_distancedict(seqlist, ignoregaps):
 	"""
 	Takes a list of sequences, and returns a data frame of Hamming distances between each pair - only the
 	upper triangular matrix is filled, and the rest return NaN.
@@ -113,7 +113,7 @@ def get_distancedict(seqlist):
 			#the next line is to extract specifically that part.
 			#???: Split this off into a function to make code more understandable?
 			key = seqlist[i].description.split('|')[1] + seqlist[j].description.split('|')[1]
-			distdict[key] = hamming_distance(seqlist[i].seq, seqlist[j].seq)
+			distdict[key] = hamming_distance(seqlist[i].seq, seqlist[j].seq, ignoregaps)
 	return distdict
 
 
@@ -137,7 +137,7 @@ def seqlist_to_file(seqlist, savepath):
   			out_hndl.write('%s\n' %str(item.seq))
 
 
-def file_to_distances(in_file, format):
+def file_to_distances(in_file, format, ignoregaps):
 	"""
 	This should just be a wrapper for all the other functions, that calls them in order.
 	"""
@@ -156,7 +156,7 @@ def file_to_distances(in_file, format):
 	print('Length cleanlist = %s' %len(cleanlist))
 
 	print('Finding Hamming distances...')
-	distdict = get_distancedict(cleanlist)
+	distdict = get_distancedict(cleanlist, ignoregaps)
 	return distdict
 
 
@@ -199,9 +199,8 @@ def parse_clargs (clargs):
 
 
 def main(clargs):
-	global args
 	args = parse_clargs(clargs)
-	distdict = file_to_distances(args.infile, args.format)
+	distdict = file_to_distances(args.infile, args.format, args.ignoregaps)
 	dict_to_csv(distdict, args.outfile)
 
 
