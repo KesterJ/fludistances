@@ -137,7 +137,17 @@ def seqlist_to_file(seqlist, savepath):
   			out_hndl.write('%s\n' %str(item.seq))
 
 
-def file_to_distances(in_file, format, ignoregaps):
+def dict_to_csv(dict1, filename):
+	"""
+	Quick wrapper for writing dictionary to a csv file, using csv module. 
+	"""
+	with open(filename, 'w') as in_hndl:
+		writer = csv.DictWriter(in_hndl, dict1.keys())
+		writer.writeheader()
+		writer.writerow(dict1)
+
+
+def file_to_distances(in_file, out_file, format, ignoregaps):
 	"""
 	This should just be a wrapper for all the other functions, that calls them in order.
 	"""
@@ -157,18 +167,10 @@ def file_to_distances(in_file, format, ignoregaps):
 
 	print('Finding Hamming distances...')
 	distdict = get_distancedict(cleanlist, ignoregaps)
-	return distdict
+	
+	dict_to_csv(distdict, out_file)
 
 
-
-def dict_to_csv(dict1, filename):
-	"""
-	Quick wrapper for writing dictionary to a csv file, using csv module. 
-	"""
-	with open(filename, 'w') as in_hndl:
-		writer = csv.DictWriter(in_hndl, dict1.keys())
-		writer.writeheader()
-		writer.writerow(dict1)
 
 
 
@@ -200,8 +202,7 @@ def parse_clargs (clargs):
 
 def main(clargs):
 	args = parse_clargs(clargs)
-	distdict = file_to_distances(args.infile, args.format, args.ignoregaps)
-	dict_to_csv(distdict, args.outfile)
+	distdict = file_to_distances(args.infile, args.outfile, args.format, args.ignoregaps)
 
 
 if __name__ == '__main__':
