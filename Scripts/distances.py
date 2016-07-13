@@ -64,8 +64,8 @@ def check_coding(seqlist):
 			codinglist.append(seq)
 		else:
 			notcodinglist.append(seq)
-	if notcodinglist:
-		seqlist_to_file(notcodinglist, 'notcoding%s'%args.outfile)
+	#if notcodinglist:
+	#	seqlist_to_file(notcodinglist, 'notcoding%s'%args.outfile)
 	return codinglist
 
 
@@ -201,6 +201,7 @@ def parse_clargs (clargs):
 
 
 def main(clargs):
+	global args
 	args = parse_clargs(clargs)
 	distdict = file_to_distances(args.infile, args.outfile, args.format, args.ignoregaps)
 
